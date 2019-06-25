@@ -67,7 +67,7 @@ def fill_with_gloves(word_to_id, path=None, emb_size=None, vocab_size=None, word
             words_notin.add(word)
             n_not_found += 1
             res[id, :] = np.random.normal(0.0, 0.1, emb_size)
-    print 'n words not found in glove word vectors: ' + str(n_not_found)
+    print('n words not found in glove word vectors: ' + str(n_not_found))
     open('../tmp/word_not_in_glove.txt','w').write((u'\n'.join(words_notin)).encode('utf-8'))
 
     return res

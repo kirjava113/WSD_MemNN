@@ -181,7 +181,7 @@ def load_all_words_data(data_path, key_path=None, dic_path=None, is_training=Fal
                 id = child.get('id')
                 lemma = child.get('lemma').lower()
                 if '(' in lemma:
-                    print id
+                    print(id)
                 pos = child.get('pos')
                 word = lemma + '#' + pos_dic[pos]
                 if key_path:
@@ -194,9 +194,9 @@ def load_all_words_data(data_path, key_path=None, dic_path=None, is_training=Fal
 
                 context = sent_list[:]
                 if context[i] != lemma:
-                    print '/'.join(context)
-                    print i
-                    print lemma
+                    print('/'.join(context))
+                    print(i)
+                    print(lemma)
                 context[i] = '<target>'
 
                 x = {
@@ -670,8 +670,8 @@ def expand_gloss(key, expand_type, n_hyper, n_hypo):
     try:
         lemma = wn.lemma_from_key(key)
     except Exception as e:
-        print e
-        print key
+        print(e)
+        print(key)
         exit(-1)
     synset = lemma.synset()
     if expand_type == 1:  # 'hyper':

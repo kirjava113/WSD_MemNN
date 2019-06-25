@@ -1,0 +1,6 @@
+nltk
+bs4
+lxml
+numpy
+math
+tensorflow

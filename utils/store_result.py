@@ -7,7 +7,7 @@
 
 import os
 
-import path
+import utils.path as path
 
 _path = path.WSD_path()
 

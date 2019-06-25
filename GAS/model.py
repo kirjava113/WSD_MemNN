@@ -231,14 +231,14 @@ class Model:
         tf.summary.scalar('accuracy', self.accuracy_op)
         self.summary_op = tf.summary.merge_all()
 
-        print 'TRAINABLE VARIABLES'
+        print ('TRAINABLE VARIABLES')
         tvars = tf.trainable_variables()
         for tvar in tvars:
-            print tvar.name
+            print (tvar.name)
 
         # Weight Penalty
         if lambda_l2_reg:
-            print 'USING L2 regularization'
+            print ('USING L2 regularization')
             w_cost = tf.constant(0.0)
             n_w = tf.constant(0.0)
             for tvar in tvars:
