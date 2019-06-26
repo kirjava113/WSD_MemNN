@@ -251,7 +251,9 @@ if __name__ == "__main__":
     tf_config.gpu_options.per_process_gpu_memory_fraction = 0.5  # maximun alloc gpu50% of MEM
     print("Set tf session")
     session = tf.Session(config=tf_config)
+    print("Session runing..")
     session.run(tf.global_variables_initializer())
+    print("Session in run")
     summary_train_writer.add_graph(session.graph)
 
     t1 = time.time()
