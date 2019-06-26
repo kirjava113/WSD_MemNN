@@ -23,7 +23,7 @@ import GAS.model as model
 _path = path.WSD_path()
 config = MemNNConfig()
 
-os.environ["CUDA_VISIBLE_DEVICES"] = '3,1,2,0'
+#os.environ["CUDA_VISIBLE_DEVICES"] = '3,1,2,0'
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 best_info = {
