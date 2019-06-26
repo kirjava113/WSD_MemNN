@@ -239,14 +239,17 @@ if __name__ == "__main__":
     model_save_dir = '../tmp/model/GAS/'
     if not os.path.exists(model_save_dir):
         os.makedirs(model_save_dir)
+    print("Saver configured")
     saver = tf.train.Saver(max_to_keep=5)
 
     pickle.dump(config, open(model_save_dir + 'conf.pkl', 'w'))
 
     # === Create session
+    print('Create Session')
     tf_config = tf.ConfigProto()
     tf_config.gpu_options.allow_growth = True  # allocate dynamically
     tf_config.gpu_options.per_process_gpu_memory_fraction = 0.5  # maximun alloc gpu50% of MEM
+    print("Set tf session")
     session = tf.Session(config=tf_config)
     session.run(tf.global_variables_initializer())
     summary_train_writer.add_graph(session.graph)
