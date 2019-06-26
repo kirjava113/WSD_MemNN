@@ -392,6 +392,7 @@ def build_vocab(data):
     return word_to_id
 
 
+# TODO
 def build_sense_ids(word_to_senses):
 
     words = list(word_to_senses.keys())
@@ -502,136 +503,136 @@ def store_notin_vocab_words(words_notin_vocab, mode='', clean=True):
     new = set(ws + old)
     open(path_words_notin_vocab.format(mode), 'w').write('\n'.join(new))
 
-
-def batch_generator(is_training, batch_size, data, dict_data, pad_id, n_step_f, n_step_b, pad_last_batch=False):
-    data_len = len(data)
-    n_batches_float = data_len / float(batch_size)
-    n_batches = int(math.ceil(n_batches_float)) if pad_last_batch else int(n_batches_float)
-
-    if is_training:
-        random.shuffle(data)
-
-    for i in range(n_batches):
-        batch = data[i * batch_size:(i + 1) * batch_size]
-
-        # context word
-        xfs = np.zeros([batch_size, n_step_f], dtype=np.int32)
-        xbs = np.zeros([batch_size, n_step_b], dtype=np.int32)
-        xfbs = np.zeros([batch_size, n_step_f + n_step_b + 1], dtype=np.int32)
-        xfs.fill(pad_id)
-        xbs.fill(pad_id)
-        xfbs.fill(pad_id)
-
-        # context pos
-        pfs = np.zeros([batch_size, n_step_f], dtype=np.int32)
-        pbs = np.zeros([batch_size, n_step_b], dtype=np.int32)
-        pfbs = np.zeros([batch_size, n_step_f + n_step_b + 1], dtype=np.int32)  # 0 is pad for pos, no need pad_id
-
-        # x forward backward
-        for j in range(batch_size):
-            if i * batch_size + j < data_len:
-                n_to_use_f = min(n_step_f, len(batch[j].xf))
-                n_to_use_b = min(n_step_b, len(batch[j].xb))
-                if n_to_use_f:
-                    xfs[j, -n_to_use_f:] = batch[j].xf[-n_to_use_f:]
-                    pfs[j, -n_to_use_f:] = batch[j].pf[-n_to_use_f:]
-                if n_to_use_b:
-                    xbs[j, -n_to_use_b:] = batch[j].xb[-n_to_use_b:]
-                    pbs[j, -n_to_use_b:] = batch[j].pb[-n_to_use_b:]
-                xfbs[j] = np.concatenate((xfs[j], [batch[j].target_word_id], xbs[j][::-1]), axis=0)
-                pfbs[j] = np.concatenate((pfs[j], [batch[j].target_pos_id], pbs[j][::-1]), axis=0)
-
-        # id
-        instance_ids = [inst.id for inst in batch]
-
-        # labels
-        target_ids = [inst.target_id for inst in batch]
-        sense_ids = [inst.sense_id for inst in batch]
-
-        if len(target_ids) < batch_size:  # padding
-            n_pad = batch_size - len(target_ids)
-            # print('Batch padding size: %d'%(n_pad))
-            target_ids += [0] * n_pad
-            sense_ids += [0] * n_pad
-            instance_ids += [0] * n_pad  # instance_ids += [''] * n_pad
-
-        target_ids = np.array(target_ids, dtype=np.int32)
-        sense_ids = np.array(sense_ids, dtype=np.int32)
-
-        glosses_ids = [dict_data[0][target_ids[i]] for i in range(batch_size)]
-        glosses_lenth = [dict_data[1][target_ids[i]] for i in range(batch_size)]
-        sense_mask = [dict_data[2][target_ids[i]] for i in range(batch_size)]
-
-        yield (xfs, xbs, xfbs, pfs, pbs, pfbs, target_ids,
-               sense_ids, instance_ids, glosses_ids, glosses_lenth, sense_mask)
-
-
-def batch_generator_hyp(is_training, batch_size, data, dict_data, pad_id, n_step_f, n_step_b, n_hyper, n_hypo,
-                        pad_last_batch=False):
-    data_len = len(data)
-    n_batches_float = data_len / float(batch_size)
-    n_batches = int(math.ceil(n_batches_float)) if pad_last_batch else int(n_batches_float)
-
-    if is_training:
-        random.shuffle(data)
-
-    for i in range(n_batches):
-        batch = data[i * batch_size:(i + 1) * batch_size]
-
-        # context word
-        xfs = np.zeros([batch_size, n_step_f], dtype=np.int32)
-        xbs = np.zeros([batch_size, n_step_b], dtype=np.int32)
-        xfbs = np.zeros([batch_size, n_step_f + n_step_b + 1], dtype=np.int32)
-        xfs.fill(pad_id)
-        xbs.fill(pad_id)
-        xfbs.fill(pad_id)
-
-        # context pos
-        pfs = np.zeros([batch_size, n_step_f], dtype=np.int32)
-        pbs = np.zeros([batch_size, n_step_b], dtype=np.int32)
-        pfbs = np.zeros([batch_size, n_step_f + n_step_b + 1], dtype=np.int32)  # 0 is pad for pos, no need pad_id
-
-        # x forward backward
-        for j in range(batch_size):
-            if i * batch_size + j < data_len:
-                n_to_use_f = min(n_step_f, len(batch[j].xf))
-                n_to_use_b = min(n_step_b, len(batch[j].xb))
-                if n_to_use_f:
-                    xfs[j, -n_to_use_f:] = batch[j].xf[-n_to_use_f:]
-                    pfs[j, -n_to_use_f:] = batch[j].pf[-n_to_use_f:]
-                if n_to_use_b:
-                    xbs[j, -n_to_use_b:] = batch[j].xb[-n_to_use_b:]
-                    pbs[j, -n_to_use_b:] = batch[j].pb[-n_to_use_b:]
-                xfbs[j] = np.concatenate((xfs[j], [batch[j].target_word_id], xbs[j][::-1]), axis=0)
-                pfbs[j] = np.concatenate((pfs[j], [batch[j].target_pos_id], pbs[j][::-1]), axis=0)
-
-        # id
-        instance_ids = [inst.id for inst in batch]
-
-        # labels
-        target_ids = [inst.target_id for inst in batch]
-        sense_ids = [inst.sense_id for inst in batch]
-
-        if len(target_ids) < batch_size:  # padding
-            n_pad = batch_size - len(target_ids)
-            # print('Batch padding size: %d'%(n_pad))
-            target_ids += [0] * n_pad
-            sense_ids += [0] * n_pad
-            instance_ids += [0] * n_pad  # instance_ids += [''] * n_pad
-
-        target_ids = np.array(target_ids, dtype=np.int32)
-        sense_ids = np.array(sense_ids, dtype=np.int32)
-
-        # [gloss_to_id, gloss_lenth, sense_mask, hyper_lenth, hypo_lenth]
-        glosses_ids = [dict_data[0][target_ids[i]] for i in
-                       range(batch_size)]  # [batch_size, max_n_sense, n_hyp, max_gloss_words]
-        glosses_lenth = [dict_data[1][target_ids[i]] for i in range(batch_size)]  # [batch_size, max_n_sense]
-        sense_mask = [dict_data[2][target_ids[i]] for i in range(batch_size)]  # [batch_size, max_n_sense, mask_size]
-        hyper_lenth = [dict_data[3][target_ids[i]] for i in range(batch_size)]  # [batch_size, max_n_sense]
-        hypo_lenth = [dict_data[4][target_ids[i]] for i in range(batch_size)]  # [batch_size, max_n_sense]
-
-        yield (xfs, xbs, xfbs, pfs, pbs, pfbs, target_ids, sense_ids, instance_ids, glosses_ids,
-               glosses_lenth, sense_mask, hyper_lenth, hypo_lenth)
+#
+# def batch_generator(is_training, batch_size, data, dict_data, pad_id, n_step_f, n_step_b, pad_last_batch=False):
+#     data_len = len(data)
+#     n_batches_float = data_len / float(batch_size)
+#     n_batches = int(math.ceil(n_batches_float)) if pad_last_batch else int(n_batches_float)
+#
+#     if is_training:
+#         random.shuffle(data)
+#
+#     for i in range(n_batches):
+#         batch = data[i * batch_size:(i + 1) * batch_size]
+#
+#         # context word
+#         xfs = np.zeros([batch_size, n_step_f], dtype=np.int32)
+#         xbs = np.zeros([batch_size, n_step_b], dtype=np.int32)
+#         xfbs = np.zeros([batch_size, n_step_f + n_step_b + 1], dtype=np.int32)
+#         xfs.fill(pad_id)
+#         xbs.fill(pad_id)
+#         xfbs.fill(pad_id)
+#
+#         # context pos
+#         pfs = np.zeros([batch_size, n_step_f], dtype=np.int32)
+#         pbs = np.zeros([batch_size, n_step_b], dtype=np.int32)
+#         pfbs = np.zeros([batch_size, n_step_f + n_step_b + 1], dtype=np.int32)  # 0 is pad for pos, no need pad_id
+#
+#         # x forward backward
+#         for j in range(batch_size):
+#             if i * batch_size + j < data_len:
+#                 n_to_use_f = min(n_step_f, len(batch[j].xf))
+#                 n_to_use_b = min(n_step_b, len(batch[j].xb))
+#                 if n_to_use_f:
+#                     xfs[j, -n_to_use_f:] = batch[j].xf[-n_to_use_f:]
+#                     pfs[j, -n_to_use_f:] = batch[j].pf[-n_to_use_f:]
+#                 if n_to_use_b:
+#                     xbs[j, -n_to_use_b:] = batch[j].xb[-n_to_use_b:]
+#                     pbs[j, -n_to_use_b:] = batch[j].pb[-n_to_use_b:]
+#                 xfbs[j] = np.concatenate((xfs[j], [batch[j].target_word_id], xbs[j][::-1]), axis=0)
+#                 pfbs[j] = np.concatenate((pfs[j], [batch[j].target_pos_id], pbs[j][::-1]), axis=0)
+#
+#         # id
+#         instance_ids = [inst.id for inst in batch]
+#
+#         # labels
+#         target_ids = [inst.target_id for inst in batch]
+#         sense_ids = [inst.sense_id for inst in batch]
+#
+#         if len(target_ids) < batch_size:  # padding
+#             n_pad = batch_size - len(target_ids)
+#             # print('Batch padding size: %d'%(n_pad))
+#             target_ids += [0] * n_pad
+#             sense_ids += [0] * n_pad
+#             instance_ids += [0] * n_pad  # instance_ids += [''] * n_pad
+#
+#         target_ids = np.array(target_ids, dtype=np.int32)
+#         sense_ids = np.array(sense_ids, dtype=np.int32)
+#
+#         glosses_ids = [dict_data[0][target_ids[i]] for i in range(batch_size)]
+#         glosses_lenth = [dict_data[1][target_ids[i]] for i in range(batch_size)]
+#         sense_mask = [dict_data[2][target_ids[i]] for i in range(batch_size)]
+#
+#         yield (xfs, xbs, xfbs, pfs, pbs, pfbs, target_ids,
+#                sense_ids, instance_ids, glosses_ids, glosses_lenth, sense_mask)
+#
+#
+# def batch_generator_hyp(is_training, batch_size, data, dict_data, pad_id, n_step_f, n_step_b, n_hyper, n_hypo,
+#                         pad_last_batch=False):
+#     data_len = len(data)
+#     n_batches_float = data_len / float(batch_size)
+#     n_batches = int(math.ceil(n_batches_float)) if pad_last_batch else int(n_batches_float)
+#
+#     if is_training:
+#         random.shuffle(data)
+#
+#     for i in range(n_batches):
+#         batch = data[i * batch_size:(i + 1) * batch_size]
+#
+#         # context word
+#         xfs = np.zeros([batch_size, n_step_f], dtype=np.int32)
+#         xbs = np.zeros([batch_size, n_step_b], dtype=np.int32)
+#         xfbs = np.zeros([batch_size, n_step_f + n_step_b + 1], dtype=np.int32)
+#         xfs.fill(pad_id)
+#         xbs.fill(pad_id)
+#         xfbs.fill(pad_id)
+#
+#         # context pos
+#         pfs = np.zeros([batch_size, n_step_f], dtype=np.int32)
+#         pbs = np.zeros([batch_size, n_step_b], dtype=np.int32)
+#         pfbs = np.zeros([batch_size, n_step_f + n_step_b + 1], dtype=np.int32)  # 0 is pad for pos, no need pad_id
+#
+#         # x forward backward
+#         for j in range(batch_size):
+#             if i * batch_size + j < data_len:
+#                 n_to_use_f = min(n_step_f, len(batch[j].xf))
+#                 n_to_use_b = min(n_step_b, len(batch[j].xb))
+#                 if n_to_use_f:
+#                     xfs[j, -n_to_use_f:] = batch[j].xf[-n_to_use_f:]
+#                     pfs[j, -n_to_use_f:] = batch[j].pf[-n_to_use_f:]
+#                 if n_to_use_b:
+#                     xbs[j, -n_to_use_b:] = batch[j].xb[-n_to_use_b:]
+#                     pbs[j, -n_to_use_b:] = batch[j].pb[-n_to_use_b:]
+#                 xfbs[j] = np.concatenate((xfs[j], [batch[j].target_word_id], xbs[j][::-1]), axis=0)
+#                 pfbs[j] = np.concatenate((pfs[j], [batch[j].target_pos_id], pbs[j][::-1]), axis=0)
+#
+#         # id
+#         instance_ids = [inst.id for inst in batch]
+#
+#         # labels
+#         target_ids = [inst.target_id for inst in batch]
+#         sense_ids = [inst.sense_id for inst in batch]
+#
+#         if len(target_ids) < batch_size:  # padding
+#             n_pad = batch_size - len(target_ids)
+#             # print('Batch padding size: %d'%(n_pad))
+#             target_ids += [0] * n_pad
+#             sense_ids += [0] * n_pad
+#             instance_ids += [0] * n_pad  # instance_ids += [''] * n_pad
+#
+#         target_ids = np.array(target_ids, dtype=np.int32)
+#         sense_ids = np.array(sense_ids, dtype=np.int32)
+#
+#         # [gloss_to_id, gloss_lenth, sense_mask, hyper_lenth, hypo_lenth]
+#         glosses_ids = [dict_data[0][target_ids[i]] for i in
+#                        range(batch_size)]  # [batch_size, max_n_sense, n_hyp, max_gloss_words]
+#         glosses_lenth = [dict_data[1][target_ids[i]] for i in range(batch_size)]  # [batch_size, max_n_sense]
+#         sense_mask = [dict_data[2][target_ids[i]] for i in range(batch_size)]  # [batch_size, max_n_sense, mask_size]
+#         hyper_lenth = [dict_data[3][target_ids[i]] for i in range(batch_size)]  # [batch_size, max_n_sense]
+#         hypo_lenth = [dict_data[4][target_ids[i]] for i in range(batch_size)]  # [batch_size, max_n_sense]
+#
+#         yield (xfs, xbs, xfbs, pfs, pbs, pfbs, target_ids, sense_ids, instance_ids, glosses_ids,
+#                glosses_lenth, sense_mask, hyper_lenth, hypo_lenth)
 
 
 # get gloss from dictionary.xml
